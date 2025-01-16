@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from app.enums.task_status import TaskStatus
 from app.enums.task_priority import TaskPriority
 from datetime import datetime
+from typing import Optional
 
 
 class TaskCreate(BaseModel):
@@ -17,8 +18,8 @@ class TaskInDB(TaskCreate):
     id: int
     status: TaskStatus
     created_at: datetime
-    completed_at: datetime
-    assigned_to: int
+    completed_at: Optional[datetime]
+    assigned_to: Optional[int]
 
     class Config:
-        orm_mode = True
+        from_attributes = True

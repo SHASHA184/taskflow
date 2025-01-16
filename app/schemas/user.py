@@ -4,6 +4,7 @@ from pydantic import BaseModel
 class UserCreate(BaseModel):
     name: str
     max_tasks: int
+    password: str
 
 
 class UserUpdate(BaseModel):
