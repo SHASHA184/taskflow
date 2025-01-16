@@ -5,6 +5,7 @@ from sqlalchemy.future import select
 from app.schemas.user import UserCreate
 from fastapi import HTTPException
 from app.utils import verify_password, get_password_hash
+from sqlalchemy.orm import selectinload
 
 
 class UserService(BaseService):
@@ -25,4 +26,13 @@ class UserService(BaseService):
             raise HTTPException(
                 status_code=400, detail="Incorrect username or password"
             )
+        return user
+
+    async def get_user_with_tasks(self, db: AsyncSession, user_id: int):
+        """Get user details along with their tasks."""
+        query = select(User).filter(User.id == user_id).options(selectinload(User.tasks))
+        result = await db.execute(query)
+        user = result.scalars().first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
         return user

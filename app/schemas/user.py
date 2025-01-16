@@ -1,5 +1,6 @@
 from pydantic import BaseModel
-
+from typing import List
+from app.schemas.task import TaskInDB
 
 class UserCreate(BaseModel):
     name: str
@@ -16,3 +17,9 @@ class UserInDB(UserCreate):
 
     class Config:
         from_attributes = True
+
+class UserWithTasks(BaseModel):
+    id: int
+    name: str
+    max_tasks: int
+    tasks: List[TaskInDB]
