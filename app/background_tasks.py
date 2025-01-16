@@ -12,15 +12,19 @@ from sqlalchemy.sql import func
 import asyncio
 from sqlalchemy.exc import IntegrityError
 
+
 @celery_app.task(name="app.background_tasks.distribute_tasks")
 def distribute_tasks():
     """Розподіл завдань між виконавцями з урахуванням пріоритету та завантаження."""
     db: Session = next(get_sync_db())  # Отримання синхронної сесії
 
     # Отримання завдань зі статусом "pending" за пріоритетом
-    pending_tasks = db.query(Task).filter(
-        Task.status == TaskStatus.PENDING
-    ).order_by(Task.priority).all()
+    pending_tasks = (
+        db.query(Task)
+        .filter(Task.status == TaskStatus.PENDING)
+        .order_by(Task.priority)
+        .all()
+    )
 
     # Підрахунок активних завдань для кожного виконавця
     task_count_subquery = (
@@ -34,11 +38,15 @@ def distribute_tasks():
         # Пошук виконавця з найменшим завантаженням
         worker = (
             db.query(User)
-            .outerjoin(task_count_subquery, User.id == task_count_subquery.c.assigned_to)
+            .outerjoin(
+                task_count_subquery, User.id == task_count_subquery.c.assigned_to
+            )
             .filter(
                 (func.coalesce(task_count_subquery.c.task_count, 0) < User.max_tasks)
             )
-            .order_by(func.coalesce(task_count_subquery.c.task_count, 0))  # Сортування за кількістю завдань
+            .order_by(
+                func.coalesce(task_count_subquery.c.task_count, 0)
+            )  # Сортування за кількістю завдань
             .first()
         )
 
@@ -57,6 +65,7 @@ def distribute_tasks():
     # Якщо завдань < 5, скорочуємо кількість виконавців до 2
     if len(pending_tasks) < 5:
         reduce_workers_to_two(db)
+
 
 def add_new_worker(db):
     """Додає нового виконавця з унікальним іменем."""
@@ -78,6 +87,7 @@ def add_new_worker(db):
             except IntegrityError:
                 db.rollback()
         count += 1
+
 
 def reduce_workers_to_two(db):
     """Зменшує кількість виконавців до двох."""
